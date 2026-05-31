@@ -37,9 +37,53 @@ async function loadJson(requestPath) {
 
 let allMovies = [];
 let allSecrets = [];
+let currentRequestNumber = 0;
 
 function normalize(value) {
   return String(value ?? "").toLowerCase();
+}
+
+function getSearchState() {
+  return {
+    query: document.getElementById("search-input").value,
+    genre: document.getElementById("genre-filter").value,
+    rating: document.getElementById("rating-filter").value
+  };
+}
+
+function updateBrowserUrl({ query, genre, rating }) {
+  const params = new URLSearchParams();
+  if (query) params.set("q", query);
+  if (genre) params.set("genre", genre);
+  if (rating) params.set("rating", rating);
+
+  const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+  window.history.replaceState({}, "", newUrl);
+}
+
+function buildSearchRequestUrl({ query, genre, rating }) {
+  const params = new URLSearchParams();
+  if (query) params.set("q", query);
+  if (genre) params.set("genre", genre);
+  if (rating) params.set("rating", rating);
+  params.set("_trace", Date.now());
+  return `data/movies.json?${params.toString()}`;
+}
+
+function buildMovieHref(movie, state) {
+  const params = new URLSearchParams();
+  params.set("id", movie.id);
+  if (state.query) params.set("q", state.query);
+  params.set("selected", movie.title || movie.id);
+  return `movie.html?${params.toString()}`;
+}
+
+function buildSecretHref(secret, state) {
+  const params = new URLSearchParams();
+  params.set("id", secret.id);
+  if (state.query) params.set("q", state.query);
+  params.set("selected", secret.title || secret.id);
+  return `secret.html?${params.toString()}`;
 }
 
 function collectOptions(field, splitter = null) {
@@ -78,16 +122,10 @@ function findSecret(query) {
   return allSecrets.find(secret => secret.normalized_phrase === normalized);
 }
 
-function renderMovies() {
-  const grid = document.getElementById("movie-grid");
-  const summary = document.getElementById("results-summary");
-  const query = document.getElementById("search-input").value;
-  const queryLower = normalize(query);
-  const genre = document.getElementById("genre-filter").value;
-  const rating = document.getElementById("rating-filter").value;
-  const secret = findSecret(query);
+function filterMovies(movies, state) {
+  const queryLower = normalize(state.query);
 
-  const filtered = allMovies.filter(movie => {
+  return movies.filter(movie => {
     const haystack = normalize([
       movie.title,
       movie.genre,
@@ -97,46 +135,73 @@ function renderMovies() {
     ].join(" "));
 
     const matchesQuery = !queryLower || haystack.includes(queryLower);
-    const matchesGenre = !genre || String(movie.genre || "").split(",").map(g => g.trim()).includes(genre);
-    const matchesRating = !rating || movie.mpaa_rating === rating;
+    const matchesGenre = !state.genre || String(movie.genre || "").split(",").map(g => g.trim()).includes(state.genre);
+    const matchesRating = !state.rating || movie.mpaa_rating === state.rating;
 
     return matchesQuery && matchesGenre && matchesRating;
   });
+}
 
-  const cards = [];
+async function renderMovies() {
+  const grid = document.getElementById("movie-grid");
+  const summary = document.getElementById("results-summary");
+  const state = getSearchState();
+  const requestNumber = ++currentRequestNumber;
 
-  if (secret && !genre && !rating) {
-    cards.push(`
-      <a class="movie-card secret-card" href="secret.html?id=${encodeURIComponent(secret.id)}">
-        <div class="poster-wrap"><div class="poster-fallback">Detail View<br>${escapeHtml(secret.subtitle)}</div></div>
+  updateBrowserUrl(state);
+
+  try {
+    /*
+      This request is intentionally repeated for each search interaction so
+      packet captures, browser developer tools, or web server logs show the
+      incremental query sequence, such as:
+        data/movies.json?q=s
+        data/movies.json?q=st
+        data/movies.json?q=sta
+        data/movies.json?q=star
+    */
+    const movies = await loadJson(buildSearchRequestUrl(state));
+    if (requestNumber !== currentRequestNumber) return;
+
+    const secret = findSecret(state.query);
+    const filtered = filterMovies(movies, state);
+    const cards = [];
+
+    if (secret && !state.genre && !state.rating) {
+      cards.push(`
+        <a class="movie-card secret-card" href="${escapeHtml(buildSecretHref(secret, state))}">
+          <div class="poster-wrap"><div class="poster-fallback">Detail View<br>${escapeHtml(secret.subtitle)}</div></div>
+          <div class="movie-card-body">
+            <h2>${escapeHtml(secret.title)}</h2>
+            <div class="badges">
+              <span class="badge secret-badge">${escapeHtml(secret.classification)}</span>
+              <span class="badge secret-badge">${escapeHtml(secret.signal)}</span>
+            </div>
+          </div>
+        </a>
+      `);
+    }
+
+    cards.push(...filtered.map(movie => `
+      <a class="movie-card" href="${escapeHtml(buildMovieHref(movie, state))}">
+        <div class="poster-wrap">${imageHtml(movie)}</div>
         <div class="movie-card-body">
-          <h2>${escapeHtml(secret.title)}</h2>
+          <h2>${escapeHtml(movie.title)}</h2>
           <div class="badges">
-            <span class="badge secret-badge">${escapeHtml(secret.classification)}</span>
-            <span class="badge secret-badge">${escapeHtml(secret.signal)}</span>
+            <span class="badge">${escapeHtml(movie.mpaa_rating || "NR")}</span>
+            <span class="badge">${escapeHtml(movie.release_date || "")}</span>
+            <span class="badge">${escapeHtml(movie.review_score || "")}</span>
           </div>
         </div>
       </a>
-    `);
+    `));
+
+    const totalShown = cards.length;
+    summary.textContent = `${totalShown} result${totalShown === 1 ? "" : "s"} shown`;
+    grid.innerHTML = cards.join("");
+  } catch (err) {
+    grid.innerHTML = `<div class="error">${escapeHtml(err.message)}</div>`;
   }
-
-  cards.push(...filtered.map(movie => `
-    <a class="movie-card" href="movie.html?id=${encodeURIComponent(movie.id)}">
-      <div class="poster-wrap">${imageHtml(movie)}</div>
-      <div class="movie-card-body">
-        <h2>${escapeHtml(movie.title)}</h2>
-        <div class="badges">
-          <span class="badge">${escapeHtml(movie.mpaa_rating || "NR")}</span>
-          <span class="badge">${escapeHtml(movie.release_date || "")}</span>
-          <span class="badge">${escapeHtml(movie.review_score || "")}</span>
-        </div>
-      </div>
-    </a>
-  `));
-
-  const totalShown = cards.length;
-  summary.textContent = `${totalShown} result${totalShown === 1 ? "" : "s"} shown`;
-  grid.innerHTML = cards.join("");
 }
 
 async function init() {
@@ -144,10 +209,6 @@ async function init() {
     const cacheBust = Date.now();
     allMovies = await loadJson(`data/movies.json?_trace=${cacheBust}`);
 
-    /*
-      Secrets are loaded silently. Nothing appears on the page unless the user
-      enters an exact matching phrase into the normal search box.
-    */
     try {
       allSecrets = await fetch(`data/secrets.json?_trace=${cacheBust}`, { cache: "no-store" }).then(r => r.ok ? r.json() : []);
     } catch {
@@ -155,7 +216,13 @@ async function init() {
     }
 
     populateFilters();
-    renderMovies();
+
+    const params = new URLSearchParams(window.location.search);
+    document.getElementById("search-input").value = params.get("q") || "";
+    document.getElementById("genre-filter").value = params.get("genre") || "";
+    document.getElementById("rating-filter").value = params.get("rating") || "";
+
+    await renderMovies();
 
     document.getElementById("search-input").addEventListener("input", renderMovies);
     document.getElementById("genre-filter").addEventListener("change", renderMovies);
