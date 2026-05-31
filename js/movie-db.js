@@ -169,29 +169,20 @@ async function renderMovies() {
 
     if (secret && !state.genre && !state.rating) {
       cards.push(`
-        <a class="movie-card secret-card" href="${escapeHtml(buildSecretHref(secret, state))}">
-          <div class="poster-wrap"><div class="poster-fallback">Detail View<br>${escapeHtml(secret.subtitle)}</div></div>
+        <a class="movie-card search-result secret-card" href="${escapeHtml(buildSecretHref(secret, state))}">
           <div class="movie-card-body">
             <h2>${escapeHtml(secret.title)}</h2>
-            <div class="badges">
-              <span class="badge secret-badge">${escapeHtml(secret.classification)}</span>
-              <span class="badge secret-badge">${escapeHtml(secret.signal)}</span>
-            </div>
+            <p class="result-description">${escapeHtml(secret.subtitle || secret.description || "Hidden entry")}</p>
           </div>
         </a>
       `);
     }
 
     cards.push(...filtered.map(movie => `
-      <a class="movie-card" href="${escapeHtml(buildMovieHref(movie, state))}">
-        <div class="poster-wrap">${imageHtml(movie)}</div>
+      <a class="movie-card search-result" href="${escapeHtml(buildMovieHref(movie, state))}">
         <div class="movie-card-body">
           <h2>${escapeHtml(movie.title)}</h2>
-          <div class="badges">
-            <span class="badge">${escapeHtml(movie.mpaa_rating || "NR")}</span>
-            <span class="badge">${escapeHtml(movie.release_date || "")}</span>
-            <span class="badge">${escapeHtml(movie.review_score || "")}</span>
-          </div>
+          <p class="result-description">${escapeHtml(movie.description || "")}</p>
         </div>
       </a>
     `));

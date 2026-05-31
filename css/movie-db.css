@@ -81,8 +81,8 @@ input, select {
 
 .movie-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
-  gap: 20px;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
 .movie-card {
@@ -144,6 +144,24 @@ input, select {
   font-size: 1.05rem;
   margin: 0 0 9px;
   line-height: 1.2;
+}
+
+.search-result {
+  border-radius: 14px;
+}
+
+.search-result .movie-card-body {
+  padding: 16px 18px;
+}
+
+.search-result h2 {
+  margin-bottom: 7px;
+}
+
+.result-description {
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.45;
 }
 
 .badges {
