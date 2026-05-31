@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Movie Database</title>
+  <link rel="stylesheet" href="css/movie-db.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <h1>Movie Database</h1>
+      <p>Searchable static movie database loaded from <code>data/movies.json</code>.</p>
+    </header>
+
+    <section class="trace-box">
+      <strong>Last GET request:</strong>
+      <code id="last-request">data/movies.json</code>
+    </section>
+
+    <section class="controls">
+      <input id="search-input" type="search" placeholder="Search title, genre, actor, director..." autocomplete="off" />
+      <select id="genre-filter">
+        <option value="">All genres</option>
+      </select>
+      <select id="rating-filter">
+        <option value="">All ratings</option>
+      </select>
+    </section>
+
+    <section id="results-summary" class="summary"></section>
+    <section id="movie-grid" class="movie-grid"></section>
+  </main>
+
+  <script src="js/movie-db.js"></script>
+</body>
+</html>

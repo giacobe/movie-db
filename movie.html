@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Movie Detail</title>
+  <link rel="stylesheet" href="css/movie-db.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <h1>Movie Detail</h1>
+      <p>Detail page loaded with its own GET request for static JSON data</p>
+    </header>
+
+    <p><a class="back-link" href="index.html">← Back to search</a></p>
+
+    <section class="trace-box">
+      <strong>Last GET request:</strong>
+      <code id="last-request">data/movies.json</code>
+    </section>
+
+    <section id="movie-detail" class="detail-card"></section>
+  </main>
+
+  <script src="js/movie-detail.js"></script>
+</body>
+</html>

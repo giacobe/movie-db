@@ -1,0 +1,255 @@
+* { box-sizing: border-box; }
+
+:root {
+  --bg: #eef4fb;
+  --panel: #ffffff;
+  --text: #0f2238;
+  --muted: #52667d;
+  --blue: #244fb8;
+  --blue-soft: #e7efff;
+  --border: #d5e0ef;
+  --shadow: 0 18px 45px rgba(30, 50, 80, 0.10);
+  --secret: #7d2ae8;
+  --secret-soft: #f1e7ff;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.page {
+  width: min(1120px, calc(100% - 36px));
+  margin: 0 auto;
+  padding: 34px 0 60px;
+}
+
+.hero h1 {
+  margin: 0 0 14px;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  letter-spacing: 0.02em;
+}
+
+.hero p {
+  margin: 0 0 28px;
+  color: var(--muted);
+  font-size: 1.15rem;
+}
+
+.trace-box {
+  border: 1px dashed #abc5e9;
+  background: rgba(255,255,255,0.55);
+  border-radius: 16px;
+  padding: 18px;
+  margin: 22px 0 28px;
+}
+
+.trace-box strong {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+
+.trace-box code {
+  color: #1649c7;
+  font-weight: 700;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 180px 160px;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+input, select {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 1rem;
+}
+
+.summary {
+  color: var(--muted);
+  margin: 10px 0 18px;
+}
+
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 20px;
+}
+
+.movie-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.movie-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 54px rgba(30, 50, 80, 0.16);
+}
+
+.poster-wrap {
+  aspect-ratio: 2 / 3;
+  background: #f5f7fb;
+  overflow: hidden;
+}
+
+.poster-wrap img,
+.detail-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Shows only if an image path is wrong or missing. */
+.poster-fallback {
+  height: 100%;
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 16px;
+  color: var(--muted);
+  background: linear-gradient(135deg, #f4f7fc, #e9eef8);
+  border: 1px solid var(--border);
+}
+
+.secret-card .poster-fallback {
+  color: white;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,.25), transparent 22%),
+    radial-gradient(circle at 70% 65%, rgba(255,255,255,.18), transparent 18%),
+    linear-gradient(135deg, #15172e, #5a20c7 48%, #150f2c);
+  border: 0;
+}
+
+.movie-card-body { padding: 14px; }
+
+.movie-card h2 {
+  font-size: 1.05rem;
+  margin: 0 0 9px;
+  line-height: 1.2;
+}
+
+.badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  padding: 4px 10px;
+  font-size: 0.88rem;
+}
+
+.secret-badge {
+  background: var(--secret-soft);
+  color: var(--secret);
+}
+
+.back-link {
+  color: var(--blue);
+  font-weight: 700;
+  font-size: 1.15rem;
+  text-decoration: none;
+}
+
+.detail-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 22px;
+  display: grid;
+  grid-template-columns: minmax(210px, 300px) 1fr;
+  gap: 28px;
+}
+
+.detail-poster {
+  aspect-ratio: 2 / 3;
+  background: #f5f7fb;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.secret-portal-art {
+  min-height: 340px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: white;
+  text-align: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,.25), transparent 22%),
+    radial-gradient(circle at 70% 65%, rgba(255,255,255,.18), transparent 18%),
+    linear-gradient(135deg, #15172e, #5a20c7 48%, #150f2c);
+  border: 1px solid #c8a8f5;
+}
+
+.secret-portal-art strong {
+  font-size: 1.65rem;
+  display: block;
+}
+
+.secret-portal-art span {
+  display: block;
+  margin-top: 8px;
+  opacity: .9;
+}
+
+.detail-content h2 {
+  font-size: 2rem;
+  margin: 0 0 24px;
+}
+
+.description {
+  font-size: 1.05rem;
+  line-height: 1.45;
+  margin: 16px 0 24px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 10px 18px;
+  font-size: 1.05rem;
+}
+
+.facts dt { font-weight: 800; }
+.facts dd { margin: 0; }
+
+.error {
+  background: #fff5f5;
+  border: 1px solid #f3c2c2;
+  color: #7c1f1f;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+@media (max-width: 760px) {
+  .controls { grid-template-columns: 1fr; }
+  .detail-card { grid-template-columns: 1fr; }
+  .detail-poster { max-width: 320px; }
+}
