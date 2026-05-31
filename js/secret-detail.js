@@ -8,22 +8,6 @@ function escapeHtml(value) {
   }[char]));
 }
 
-function normalizeSecretPhrase(value) {
-  return String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-function imageHtml(movie, className = "") {
-  const src = movie.image || "";
-  const alt = movie.title ? `Poster for ${movie.title}` : "Movie poster";
-
-  if (!src) {
-    return `<div class="poster-fallback">No poster available</div>`;
-  }
-
-  return `<img class="${className}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}"
-    onerror="this.replaceWith(Object.assign(document.createElement('div'), {className:'poster-fallback', textContent:'Poster image not found: ${escapeHtml(src)}'}));">`;
-}
-
 async function loadJson(requestPath) {
   const trace = document.getElementById("last-request");
   if (trace) trace.textContent = requestPath;
@@ -35,9 +19,13 @@ async function loadJson(requestPath) {
   return response.json();
 }
 
-function getSecretId() {
+function getSecretKey() {
   const params = new URLSearchParams(window.location.search);
-  return params.get("id");
+  return params.get("key");
+}
+
+function isValidLookupKey(value) {
+  return /^[a-f0-9]{64}$/.test(String(value || ""));
 }
 
 function renderSecret(secret) {
@@ -62,8 +50,7 @@ function renderSecret(secret) {
 
       <dl class="facts">
         <dt>Discovery ID:</dt><dd>${escapeHtml(secret.id)}</dd>
-        <dt>Phrase:</dt><dd>${escapeHtml(secret.phrase)}</dd>
-        <dt>Normalized:</dt><dd><code>${escapeHtml(secret.normalized_phrase)}</code></dd>
+        <dt>Lookup:</dt><dd><code>${escapeHtml(String(secret.lookup_key || "").slice(0, 16))}...</code></dd>
         <dt>Next step:</dt><dd>${escapeHtml(secret.next_step)}</dd>
       </dl>
     </div>
@@ -71,22 +58,15 @@ function renderSecret(secret) {
 }
 
 async function init() {
-  const id = getSecretId();
+  const key = getSecretKey();
 
-  if (!id) {
-    document.getElementById("secret-detail").innerHTML = `<div class="error">No movie ID was provided.</div>`;
+  if (!isValidLookupKey(key)) {
+    document.getElementById("secret-detail").innerHTML = `<div class="error">No valid secret lookup key was provided.</div>`;
     return;
   }
 
   try {
-    const secrets = await loadJson(`data/secrets.json?id=${encodeURIComponent(id)}&_trace=${Date.now()}`);
-    const secret = secrets.find(item => String(item.id) === String(id));
-
-    if (!secret) {
-      document.getElementById("secret-detail").innerHTML = `<div class="error">No matching entry found.</div>`;
-      return;
-    }
-
+    const secret = await loadJson(`data/secret-entries/${encodeURIComponent(key)}.json?_trace=${Date.now()}`);
     renderSecret(secret);
   } catch (err) {
     document.getElementById("secret-detail").innerHTML = `<div class="error">${escapeHtml(err.message)}</div>`;

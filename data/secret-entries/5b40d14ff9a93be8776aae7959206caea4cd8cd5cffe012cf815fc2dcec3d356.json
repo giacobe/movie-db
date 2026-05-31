@@ -1,0 +1,11 @@
+{
+  "id": "secret-07",
+  "title": "Secret Portal",
+  "subtitle": "Hidden Entry 07",
+  "description": "You found a hidden portal by searching for a watched-network phrase. This page exists outside the normal movie database flow and is loaded from static JSON.",
+  "classification": "Hidden network artifact",
+  "signal": "Observed",
+  "risk": "Traffic visibility",
+  "next_step": "Record this discovery and continue exploring.",
+  "lookup_key": "5b40d14ff9a93be8776aae7959206caea4cd8cd5cffe012cf815fc2dcec3d356"
+}

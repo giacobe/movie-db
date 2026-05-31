@@ -12,23 +12,18 @@ function normalizeSecretPhrase(value) {
   return String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-function imageHtml(movie, className = "") {
-  const src = movie.image || "";
-  const alt = movie.title ? `Poster for ${movie.title}` : "Movie poster";
-
-  if (!src) {
-    return `<div class="poster-fallback">No poster available</div>`;
-  }
-
-  return `<img class="${className}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}"
-    onerror="this.replaceWith(Object.assign(document.createElement('div'), {className:'poster-fallback', textContent:'Poster image not found: ${escapeHtml(src)}'}));">`;
+async function sha256Hex(value) {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-async function loadJson(requestPath) {
+async function loadJson(requestPath, { allowMissing = false } = {}) {
   const trace = document.getElementById("last-request");
   if (trace) trace.textContent = requestPath;
 
   const response = await fetch(requestPath, { cache: "no-store" });
+  if (allowMissing && response.status === 404) return null;
   if (!response.ok) {
     throw new Error(`Could not load ${requestPath}: HTTP ${response.status}`);
   }
@@ -36,7 +31,6 @@ async function loadJson(requestPath) {
 }
 
 let allMovies = [];
-let allSecrets = [];
 let currentRequestNumber = 0;
 
 function normalize(value) {
@@ -80,9 +74,9 @@ function buildMovieHref(movie, state) {
 
 function buildSecretHref(secret, state) {
   const params = new URLSearchParams();
-  params.set("id", secret.id);
+  params.set("key", secret.lookup_key);
   if (state.query) params.set("q", state.query);
-  params.set("selected", secret.title || secret.id);
+  params.set("selected", secret.title || "Secret Portal");
   return `secret.html?${params.toString()}`;
 }
 
@@ -115,11 +109,17 @@ function populateFilters() {
   });
 }
 
-function findSecret(query) {
+async function findSecret(query) {
   const normalized = normalizeSecretPhrase(query);
-  if (!normalized) return null;
 
-  return allSecrets.find(secret => secret.normalized_phrase === normalized);
+  // Do not download a complete list of secret phrases. Once the typed
+  // normalized input is long enough to plausibly be a secret phrase, check
+  // for exactly one hashed static file. Most partial strings return 404.
+  if (normalized.length < 12) return null;
+
+  const key = await sha256Hex(normalized);
+  const requestPath = `data/secret-entries/${key}.json?_trace=${Date.now()}`;
+  return loadJson(requestPath, { allowMissing: true });
 }
 
 function filterMovies(movies, state) {
@@ -151,23 +151,18 @@ async function renderMovies() {
   updateBrowserUrl(state);
 
   try {
-    /*
-      This request is intentionally repeated for each search interaction so
-      packet captures, browser developer tools, or web server logs show the
-      incremental query sequence, such as:
-        data/movies.json?q=s
-        data/movies.json?q=st
-        data/movies.json?q=sta
-        data/movies.json?q=star
-    */
     const movies = await loadJson(buildSearchRequestUrl(state));
     if (requestNumber !== currentRequestNumber) return;
 
-    const secret = findSecret(state.query);
-    const filtered = filterMovies(movies, state);
+    const [secret, filtered] = await Promise.all([
+      (!state.genre && !state.rating) ? findSecret(state.query) : Promise.resolve(null),
+      Promise.resolve(filterMovies(movies, state))
+    ]);
+    if (requestNumber !== currentRequestNumber) return;
+
     const cards = [];
 
-    if (secret && !state.genre && !state.rating) {
+    if (secret) {
       cards.push(`
         <a class="movie-card search-result secret-card" href="${escapeHtml(buildSecretHref(secret, state))}">
           <div class="movie-card-body">
@@ -199,12 +194,6 @@ async function init() {
   try {
     const cacheBust = Date.now();
     allMovies = await loadJson(`data/movies.json?_trace=${cacheBust}`);
-
-    try {
-      allSecrets = await fetch(`data/secrets.json?_trace=${cacheBust}`, { cache: "no-store" }).then(r => r.ok ? r.json() : []);
-    } catch {
-      allSecrets = [];
-    }
 
     populateFilters();
 
